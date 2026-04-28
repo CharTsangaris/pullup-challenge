@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Pull-up Challenge</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f5f3;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --text: #1a1a18;
+    --text-muted: #6b6b67;
+    --text-hint: #9b9b96;
+    --green: #1D9E75;
+    --green-bg: #E1F5EE;
+    --blue: #378ADD;
+    --blue-bg: #E6F1FB;
+    --blue-text: #0C447C;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18;
+      --surface: #242422;
+      --border: rgba(255,255,255,0.1);
+      --text: #f0f0ec;
+      --text-muted: #9b9b96;
+      --text-hint: #6b6b67;
+      --green-bg: #085041;
+      --blue-bg: #0C447C;
+      --blue-text: #85B7EB;
+    }
+  }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .app { max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+
+  header { padding: 20px 20px 0; margin-bottom: 20px; }
+  header h1 { font-size: 20px; font-weight: 600; }
+  header p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  .tab-bar { display: flex; background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 20px; position: sticky; top: 0; z-index: 10; }
+  .tab { padding: 12px 14px; font-size: 13px; font-weight: 500; color: var(--text-muted); border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -0.5px; }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+  .page { display: none; padding: 20px; }
+  .page.active { display: block; }
+
+  .section-label { font-size: 11px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+
+  .member-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .member-btn { padding: 14px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 15px; font-weight: 500; cursor: pointer; text-align: center; }
+  .member-btn:active { transform: scale(0.97); }
+  .member-btn.selected { border: 2px solid var(--blue); background: var(--blue-bg); color: var(--blue-text); }
+
+  .rep-row { display: flex; gap: 8px; align-items: center; }
+  .rep-input { flex: 1; font-size: 28px; font-weight: 600; text-align: center; padding: 10px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); max-width: 120px; }
+  .rep-input:focus { outline: none; border-color: var(--blue); }
+  .add-btn { flex: 1; padding: 14px; background: var(--text); color: var(--bg); border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 600; cursor: pointer; }
+  .add-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .add-btn:active:not(:disabled) { transform: scale(0.98); }
+
+  .today-info { font-size: 13px; color: var(--text-muted); margin-top: 10px; line-height: 1.5; }
+
+  .toast { background: var(--green-bg); color: var(--green); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 14px; font-weight: 500; margin-bottom: 12px; display: none; }
+  .error-msg { background: #FCEBEB; color: #A32D2D; border-radius: var(--radius-sm); padding: 12px; font-size: 13px; margin-bottom: 12px; display: none; }
+
+  .progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .p-name { width: 92px; font-size: 14px; font-weight: 500; flex-shrink: 0; }
+  .p-bar-wrap { flex: 1; height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .p-bar { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+  .p-bar.done { background: var(--green); }
+  .p-bar.partial { background: var(--blue); }
+  .p-total { font-size: 12px; color: var(--text-muted); width: 52px; text-align: right; flex-shrink: 0; }
+  .p-check { font-size: 14px; color: var(--green); width: 16px; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
+  .stat-card { background: var(--bg); border-radius: var(--radius-sm); padding: 12px; text-align: center; }
+  .stat-val { font-size: 24px; font-weight: 600; }
+  .stat-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  select { width: 100%; padding: 10px 12px; font-size: 15px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); margin-bottom: 16px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b67' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+
+  .history-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
+  .history-row:last-child { border-bottom: none; }
+  .h-date { color: var(--text-muted); flex-shrink: 0; }
+  .h-sets { color: var(--text); font-family: monospace; font-size: 12px; flex: 1; margin: 0 10px; text-align: center; }
+  .h-total { font-weight: 600; min-width: 36px; text-align: right; }
+  .h-total.done { color: var(--green); }
+  .h-total.miss { color: var(--text-muted); }
+
+  .day-card { margin-bottom: 12px; }
+  .day-header { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+
+  .loading { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; }
+
+  .export-btn { width: 100%; padding: 12px; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 8px; }
+  .export-btn:active { transform: scale(0.98); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Pull-up Challenge</h1>
+    <p id="header-date"></p>
+  </header>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="showPage('log', this)">Log</button>
+    <button class="tab" onclick="showPage('today', this)">Today</button>
+    <button class="tab" onclick="showPage('history', this)">My history</button>
+    <button class="tab" onclick="showPage('all', this)">All</button>
+  </div>
+
+  <div id="page-log" class="page active">
+    <div class="toast" id="toast"></div>
+    <div class="error-msg" id="error-msg"></div>
+    <div class="section-label">Who are you?</div>
+    <div class="member-grid" id="member-grid"></div>
+    <div id="rep-section" style="display:none">
+      <div class="card">
+        <div class="section-label" id="rep-label">Add reps</div>
+        <div class="rep-row">
+          <input class="rep-input" type="number" id="rep-val" min="1" max="99" placeholder="0" inputmode="numeric" />
+          <button class="add-btn" id="add-btn" onclick="submitReps()">Add</button>
+        </div>
+        <div class="today-info" id="today-info"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-today" class="page">
+    <div class="section-label">Today's leaderboard</div>
+    <div class="card" id="leaderboard"><div class="loading">Loading...</div></div>
+  </div>
+
+  <div id="page-history" class="page">
+    <div class="section-label">Member</div>
+    <select id="history-select" onchange="renderHistory()"></select>
+    <div class="stat-row" id="history-stats"></div>
+    <div class="card" id="history-list"></div>
+  </div>
+
+  <div id="page-all" class="page">
+    <div id="all-history"><div class="loading">Loading...</div></div>
+    <button class="export-btn" onclick="exportCSV()">Export to CSV</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION — fill in both values from JSONBin
+// ============================================================
+var JSONBIN_BIN_ID  = 'PASTE_BIN_ID_HERE';
+var JSONBIN_API_KEY = 'PASTE_API_KEY_HERE';
+// ============================================================
+
+var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID;
+
+var MEMBERS = [
+  { name: 'Marios',      target: 30 },
+  { name: 'Andreas',     target: 30 },
+  { name: 'Charis',      target: 10 },
+  { name: 'Nicolas',     target: 30 },
+  { name: 'Nicholas Z.', target: 10 },
+  { name: 'Evangelos',   target: 30 },
+];
+
+var HISTORICAL = [
+  { date: '2026-04-06', name: 'Marios',   reps: 10 }, { date: '2026-04-06', name: 'Marios',   reps: 5  }, { date: '2026-04-06', name: 'Marios',   reps: 7  }, { date: '2026-04-06', name: 'Marios',   reps: 8  },
+  { date: '2026-04-06', name: 'Andreas',  reps: 10 },
+  { date: '2026-04-06', name: 'Charis',   reps: 2  },
+  { date: '2026-04-07', name: 'Marios',   reps: 10 }, { date: '2026-04-07', name: 'Marios',   reps: 8  }, { date: '2026-04-07', name: 'Marios',   reps: 8  }, { date: '2026-04-07', name: 'Marios',   reps: 5  },
+  { date: '2026-04-07', name: 'Andreas',  reps: 50 },
+  { date: '2026-04-07', name: 'Nicolas',  reps: 5  }, { date: '2026-04-07', name: 'Nicolas',  reps: 5  }, { date: '2026-04-07', name: 'Nicolas',  reps: 5  }, { date: '2026-04-07', name: 'Nicolas',  reps: 5  }, { date: '2026-04-07', name: 'Nicolas',  reps: 5  }, { date: '2026-04-07', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-08', name: 'Marios',   reps: 5  }, { date: '2026-04-08', name: 'Marios',   reps: 5  }, { date: '2026-04-08', name: 'Marios',   reps: 5  }, { date: '2026-04-08', name: 'Marios',   reps: 5  }, { date: '2026-04-08', name: 'Marios',   reps: 5  }, { date: '2026-04-08', name: 'Marios',   reps: 5  },
+  { date: '2026-04-08', name: 'Andreas',  reps: 30 },
+  { date: '2026-04-08', name: 'Charis',   reps: 4  }, { date: '2026-04-08', name: 'Charis',   reps: 2  }, { date: '2026-04-08', name: 'Charis',   reps: 2  },
+  { date: '2026-04-08', name: 'Nicolas',  reps: 5  }, { date: '2026-04-08', name: 'Nicolas',  reps: 5  }, { date: '2026-04-08', name: 'Nicolas',  reps: 5  }, { date: '2026-04-08', name: 'Nicolas',  reps: 5  }, { date: '2026-04-08', name: 'Nicolas',  reps: 5  }, { date: '2026-04-08', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-09', name: 'Marios',   reps: 8  }, { date: '2026-04-09', name: 'Marios',   reps: 5  }, { date: '2026-04-09', name: 'Marios',   reps: 4  }, { date: '2026-04-09', name: 'Marios',   reps: 4  }, { date: '2026-04-09', name: 'Marios',   reps: 9  },
+  { date: '2026-04-09', name: 'Andreas',  reps: 30 },
+  { date: '2026-04-09', name: 'Charis',   reps: 2  }, { date: '2026-04-09', name: 'Charis',   reps: 2  }, { date: '2026-04-09', name: 'Charis',   reps: 2  }, { date: '2026-04-09', name: 'Charis',   reps: 4  }, { date: '2026-04-09', name: 'Charis',   reps: 2  },
+  { date: '2026-04-09', name: 'Nicolas',  reps: 5  }, { date: '2026-04-09', name: 'Nicolas',  reps: 5  }, { date: '2026-04-09', name: 'Nicolas',  reps: 5  }, { date: '2026-04-09', name: 'Nicolas',  reps: 5  }, { date: '2026-04-09', name: 'Nicolas',  reps: 5  }, { date: '2026-04-09', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-10', name: 'Marios',   reps: 5  }, { date: '2026-04-10', name: 'Marios',   reps: 5  }, { date: '2026-04-10', name: 'Marios',   reps: 5  }, { date: '2026-04-10', name: 'Marios',   reps: 5  }, { date: '2026-04-10', name: 'Marios',   reps: 5  }, { date: '2026-04-10', name: 'Marios',   reps: 5  },
+  { date: '2026-04-13', name: 'Marios',   reps: 5  }, { date: '2026-04-13', name: 'Marios',   reps: 5  }, { date: '2026-04-13', name: 'Marios',   reps: 5  }, { date: '2026-04-13', name: 'Marios',   reps: 3  }, { date: '2026-04-13', name: 'Marios',   reps: 6  },
+  { date: '2026-04-14', name: 'Marios',   reps: 6  }, { date: '2026-04-14', name: 'Marios',   reps: 8  }, { date: '2026-04-14', name: 'Marios',   reps: 5  }, { date: '2026-04-14', name: 'Marios',   reps: 6  }, { date: '2026-04-14', name: 'Marios',   reps: 6  }, { date: '2026-04-14', name: 'Marios',   reps: 5  },
+  { date: '2026-04-15', name: 'Nicolas',  reps: 5  }, { date: '2026-04-15', name: 'Nicolas',  reps: 5  }, { date: '2026-04-15', name: 'Nicolas',  reps: 5  }, { date: '2026-04-15', name: 'Nicolas',  reps: 5  }, { date: '2026-04-15', name: 'Nicolas',  reps: 5  }, { date: '2026-04-15', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-16', name: 'Charis',   reps: 3  },
+  { date: '2026-04-16', name: 'Nicolas',  reps: 5  }, { date: '2026-04-16', name: 'Nicolas',  reps: 5  }, { date: '2026-04-16', name: 'Nicolas',  reps: 5  }, { date: '2026-04-16', name: 'Nicolas',  reps: 5  }, { date: '2026-04-16', name: 'Nicolas',  reps: 5  }, { date: '2026-04-16', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-20', name: 'Charis',   reps: 5  },
+  { date: '2026-04-20', name: 'Nicolas',  reps: 5  }, { date: '2026-04-20', name: 'Nicolas',  reps: 5  }, { date: '2026-04-20', name: 'Nicolas',  reps: 5  }, { date: '2026-04-20', name: 'Nicolas',  reps: 5  }, { date: '2026-04-20', name: 'Nicolas',  reps: 5  }, { date: '2026-04-20', name: 'Nicolas',  reps: 5  }, { date: '2026-04-20', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-21', name: 'Marios',   reps: 5  }, { date: '2026-04-21', name: 'Marios',   reps: 5  }, { date: '2026-04-21', name: 'Marios',   reps: 5  }, { date: '2026-04-21', name: 'Marios',   reps: 2  }, { date: '2026-04-21', name: 'Marios',   reps: 13 },
+  { date: '2026-04-21', name: 'Charis',   reps: 4  },
+  { date: '2026-04-21', name: 'Nicolas',  reps: 5  }, { date: '2026-04-21', name: 'Nicolas',  reps: 5  }, { date: '2026-04-21', name: 'Nicolas',  reps: 5  }, { date: '2026-04-21', name: 'Nicolas',  reps: 5  }, { date: '2026-04-21', name: 'Nicolas',  reps: 5  }, { date: '2026-04-21', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-22', name: 'Marios',   reps: 5  }, { date: '2026-04-22', name: 'Marios',   reps: 5  }, { date: '2026-04-22', name: 'Marios',   reps: 5  }, { date: '2026-04-22', name: 'Marios',   reps: 5  }, { date: '2026-04-22', name: 'Marios',   reps: 6  }, { date: '2026-04-22', name: 'Marios',   reps: 4  },
+  { date: '2026-04-22', name: 'Nicolas',  reps: 5  }, { date: '2026-04-22', name: 'Nicolas',  reps: 5  }, { date: '2026-04-22', name: 'Nicolas',  reps: 5  }, { date: '2026-04-22', name: 'Nicolas',  reps: 5  }, { date: '2026-04-22', name: 'Nicolas',  reps: 5  }, { date: '2026-04-22', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-23', name: 'Marios',   reps: 5  }, { date: '2026-04-23', name: 'Marios',   reps: 5  }, { date: '2026-04-23', name: 'Marios',   reps: 5  }, { date: '2026-04-23', name: 'Marios',   reps: 5  }, { date: '2026-04-23', name: 'Marios',   reps: 5  }, { date: '2026-04-23', name: 'Marios',   reps: 5  },
+  { date: '2026-04-23', name: 'Andreas',  reps: 30 },
+  { date: '2026-04-24', name: 'Marios',   reps: 10 }, { date: '2026-04-24', name: 'Marios',   reps: 5  }, { date: '2026-04-24', name: 'Marios',   reps: 2  }, { date: '2026-04-24', name: 'Marios',   reps: 5  }, { date: '2026-04-24', name: 'Marios',   reps: 8  },
+  { date: '2026-04-24', name: 'Andreas',  reps: 52 },
+  { date: '2026-04-24', name: 'Charis',   reps: 4  }, { date: '2026-04-24', name: 'Charis',   reps: 3  }, { date: '2026-04-24', name: 'Charis',   reps: 3  }, { date: '2026-04-24', name: 'Charis',   reps: 4  }, { date: '2026-04-24', name: 'Charis',   reps: 2  }, { date: '2026-04-24', name: 'Charis',   reps: 2  }, { date: '2026-04-24', name: 'Charis',   reps: 3  }, { date: '2026-04-24', name: 'Charis',   reps: 4  }, { date: '2026-04-24', name: 'Charis',   reps: 5  },
+  { date: '2026-04-24', name: 'Nicolas',  reps: 5  }, { date: '2026-04-24', name: 'Nicolas',  reps: 5  }, { date: '2026-04-24', name: 'Nicolas',  reps: 5  }, { date: '2026-04-24', name: 'Nicolas',  reps: 5  }, { date: '2026-04-24', name: 'Nicolas',  reps: 5  }, { date: '2026-04-24', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-24', name: 'Evangelos',reps: 3  },
+  { date: '2026-04-27', name: 'Marios',   reps: 5  }, { date: '2026-04-27', name: 'Marios',   reps: 6  }, { date: '2026-04-27', name: 'Marios',   reps: 4  }, { date: '2026-04-27', name: 'Marios',   reps: 5  }, { date: '2026-04-27', name: 'Marios',   reps: 5  }, { date: '2026-04-27', name: 'Marios',   reps: 5  },
+  { date: '2026-04-27', name: 'Andreas',  reps: 90 },
+  { date: '2026-04-27', name: 'Charis',   reps: 4  }, { date: '2026-04-27', name: 'Charis',   reps: 3  }, { date: '2026-04-27', name: 'Charis',   reps: 3  }, { date: '2026-04-27', name: 'Charis',   reps: 3  }, { date: '2026-04-27', name: 'Charis',   reps: 3  }, { date: '2026-04-27', name: 'Charis',   reps: 2  },
+  { date: '2026-04-27', name: 'Nicolas',  reps: 5  }, { date: '2026-04-27', name: 'Nicolas',  reps: 5  }, { date: '2026-04-27', name: 'Nicolas',  reps: 5  }, { date: '2026-04-27', name: 'Nicolas',  reps: 5  }, { date: '2026-04-27', name: 'Nicolas',  reps: 5  }, { date: '2026-04-27', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-28', name: 'Marios',   reps: 5  },
+  { date: '2026-04-28', name: 'Andreas',  reps: 10 },
+  { date: '2026-04-28', name: 'Charis',   reps: 5  }, { date: '2026-04-28', name: 'Charis',   reps: 3  }, { date: '2026-04-28', name: 'Charis',   reps: 2  },
+  { date: '2026-04-28', name: 'Nicolas',  reps: 5  }, { date: '2026-04-28', name: 'Nicolas',  reps: 5  }, { date: '2026-04-28', name: 'Nicolas',  reps: 5  },
+];
+
+var selectedMember = null;
+var liveEntries = [];
+var isLoading = false;
+
+function getToday() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function formatDate(d) { var p = d.split('-'); return p[2]+'/'+p[1]+'/'+p[0].slice(2); }
+
+function allEntries() { return HISTORICAL.concat(liveEntries); }
+
+function getEntriesForDate(name, date) {
+  return allEntries().filter(function(e){ return e.name === name && e.date === date; });
+}
+function getTotalForDate(name, date) {
+  return getEntriesForDate(name, date).reduce(function(s,e){ return s+e.reps; }, 0);
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(function(){ t.style.display='none'; }, 3000);
+}
+function showError(msg) {
+  var e = document.getElementById('error-msg');
+  e.textContent = msg; e.style.display = 'block';
+  setTimeout(function(){ e.style.display='none'; }, 5000);
+}
+
+async function fetchLiveEntries() {
+  if (JSONBIN_BIN_ID === 'PASTE_BIN_ID_HERE') return;
+  try {
+    var res = await fetch(JSONBIN_URL + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_API_KEY }
+    });
+    var data = await res.json();
+    if (data.record && Array.isArray(data.record.entries)) {
+      liveEntries = data.record.entries;
+    }
+  } catch(err) { console.error('Fetch error:', err); }
+}
+
+async function saveLiveEntries() {
+  if (JSONBIN_BIN_ID === 'PASTE_BIN_ID_HERE') return;
+  await fetch(JSONBIN_URL, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
+    body: JSON.stringify({ entries: liveEntries })
+  });
+}
+
+async function submitReps() {
+  if (!selectedMember || isLoading) return;
+  var val = parseInt(document.getElementById('rep-val').value);
+  if (!val || val < 1) return;
+
+  if (JSONBIN_BIN_ID === 'PASTE_BIN_ID_HERE') {
+    showError('JSONBin not configured yet. See setup instructions.');
+    return;
+  }
+
+  isLoading = true;
+  var btn = document.getElementById('add-btn');
+  btn.disabled = true; btn.textContent = '...';
+
+  try {
+    liveEntries.push({ name: selectedMember, date: getToday(), reps: val });
+    await saveLiveEntries();
+    document.getElementById('rep-val').value = '';
+    var total = getTotalForDate(selectedMember, getToday());
+    var m = MEMBERS.find(function(x){ return x.name === selectedMember; });
+    var msg = total >= m.target
+      ? val + ' reps logged. Total: ' + total + ' — target hit!'
+      : val + ' reps logged. Today: ' + total + ' / ' + m.target;
+    showToast(msg);
+    updateTodayInfo();
+    renderLeaderboard();
+  } catch(err) {
+    liveEntries.pop();
+    showError('Connection error. Try again.');
+  }
+
+  isLoading = false;
+  btn.disabled = false; btn.textContent = 'Add';
+}
+
+function renderMemberGrid() {
+  document.getElementById('member-grid').innerHTML = MEMBERS.map(function(m){
+    var cls = selectedMember === m.name ? ' selected' : '';
+    return '<button class="member-btn'+cls+'" onclick="selectMember(\''+m.name+'\')">'+m.name+'</button>';
+  }).join('');
+}
+
+function selectMember(name) {
+  selectedMember = name;
+  renderMemberGrid();
+  document.getElementById('rep-section').style.display = 'block';
+  document.getElementById('rep-label').textContent = name;
+  document.getElementById('rep-val').value = '';
+  document.getElementById('rep-val').focus();
+  updateTodayInfo();
+}
+
+function updateTodayInfo() {
+  if (!selectedMember) return;
+  var today = getToday();
+  var entries = getEntriesForDate(selectedMember, today);
+  var total = entries.reduce(function(s,e){ return s+e.reps; }, 0);
+  var m = MEMBERS.find(function(x){ return x.name === selectedMember; });
+  var setsStr = entries.length ? entries.map(function(e){return e.reps;}).join(' + ') + ' = ' + total : 'none yet';
+  document.getElementById('today-info').textContent = 'Today: ' + setsStr + ' / ' + m.target;
+}
+
+function renderLeaderboard() {
+  var today = getToday();
+  document.getElementById('leaderboard').innerHTML = MEMBERS.map(function(m){
+    var total = getTotalForDate(m.name, today);
+    var pct = Math.min(100, Math.round((total / m.target) * 100));
+    var done = total >= m.target;
+    return '<div class="progress-row">'+
+      '<div class="p-name">'+m.name+'</div>'+
+      '<div class="p-bar-wrap"><div class="p-bar '+(done?'done':'partial')+'" style="width:'+pct+'%"></div></div>'+
+      '<div class="p-total">'+total+'/'+m.target+'</div>'+
+      '<div class="p-check">'+(done?'✓':'')+'</div>'+
+      '</div>';
+  }).join('');
+}
+
+function renderHistory() {
+  var name = document.getElementById('history-select').value;
+  if (!name) return;
+  var m = MEMBERS.find(function(x){ return x.name === name; });
+  var dates = [...new Set(allEntries().filter(function(e){return e.name===name;}).map(function(e){return e.date;}))].sort().reverse();
+  var completed = dates.filter(function(d){ return getTotalForDate(name,d) >= m.target; });
+  var totalReps = dates.reduce(function(sum,d){ return sum+getTotalForDate(name,d); }, 0);
+
+  document.getElementById('history-stats').innerHTML =
+    '<div class="stat-card"><div class="stat-val">'+dates.length+'</div><div class="stat-lbl">days logged</div></div>'+
+    '<div class="stat-card"><div class="stat-val">'+completed.length+'</div><div class="stat-lbl">targets hit</div></div>'+
+    '<div class="stat-card"><div class="stat-val">'+totalReps+'</div><div class="stat-lbl">total reps</div></div>';
+
+  document.getElementById('history-list').innerHTML = dates.map(function(d){
+    var entries = getEntriesForDate(name, d);
+    var total = entries.reduce(function(s,e){return s+e.reps;},0);
+    var done = total >= m.target;
+    return '<div class="history-row">'+
+      '<span class="h-date">'+formatDate(d)+'</span>'+
+      '<span class="h-sets">'+entries.map(function(e){return e.reps;}).join(' + ')+'</span>'+
+      '<span class="h-total '+(done?'done':'miss')+'">'+total+(done?' ✓':'')+'</span>'+
+      '</div>';
+  }).join('') || '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">No entries yet.</div>';
+}
+
+function renderAllHistory() {
+  var dates = [...new Set(allEntries().map(function(e){return e.date;}))].sort().reverse();
+  var el = document.getElementById('all-history');
+  if (!dates.length) { el.innerHTML = '<div class="loading">No data yet.</div>'; return; }
+  el.innerHTML = dates.map(function(date){
+    var rows = MEMBERS.map(function(m){
+      var entries = getEntriesForDate(m.name, date);
+      if (!entries.length) return '';
+      var total = entries.reduce(function(s,e){return s+e.reps;},0);
+      var done = total >= m.target;
+      return '<div class="history-row">'+
+        '<span class="h-date" style="width:90px">'+m.name+'</span>'+
+        '<span class="h-sets">'+entries.map(function(e){return e.reps;}).join('+')+'</span>'+
+        '<span class="h-total '+(done?'done':'miss')+'">'+total+(done?' ✓':'')+'</span>'+
+        '</div>';
+    }).filter(Boolean).join('');
+    if (!rows) return '';
+    return '<div class="card day-card"><div class="day-header">'+formatDate(date)+'</div>'+rows+'</div>';
+  }).join('');
+}
+
+function exportCSV() {
+  var rows = [['Date','Name','Reps']];
+  allEntries().forEach(function(e){ rows.push([e.date, e.name, e.reps]); });
+  var csv = rows.map(function(r){ return r.join(','); }).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pullup_challenge.csv';
+  a.click();
+}
+
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById('page-'+id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'today') renderLeaderboard();
+  if (id === 'history') renderHistory();
+  if (id === 'all') renderAllHistory();
+}
+
+async function init() {
+  document.getElementById('header-date').textContent = getToday();
+  var sel = document.getElementById('history-select');
+  sel.innerHTML = MEMBERS.map(function(m){ return '<option value="'+m.name+'">'+m.name+'</option>'; }).join('');
+  renderMemberGrid();
+  await fetchLiveEntries();
+  renderLeaderboard();
+  renderHistory();
+  renderAllHistory();
+}
+
+init();
+</script>
+</body>
+</html>
