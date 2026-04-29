@@ -210,7 +210,19 @@ function getToday() {
   return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
 }
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
-function formatDate(d) { var p = d.split('-'); return p[2]+'/'+p[1]+'/'+p[0].slice(2); }
+
+function parseDate(raw) {
+  // Handles both '2026-04-28' and '2026-04-28T21:00:00.000Z'
+  if (!raw) return '';
+  return String(raw).substring(0, 10);
+}
+
+function formatDate(d) {
+  var clean = parseDate(d);
+  var p = clean.split('-');
+  if (p.length < 3) return clean;
+  return p[2] + '/' + p[1] + '/' + p[0]; // DD/MM/YYYY
+}
 
 function allEntries() { return liveEntries; }
 
@@ -240,7 +252,7 @@ async function fetchLiveEntries() {
     var data = await res.json();
     if (data.success && Array.isArray(data.entries)) {
       liveEntries = data.entries.map(function(e) {
-        return { name: e.name, date: e.date, reps: parseInt(e.reps) };
+        return { name: e.name, date: parseDate(e.date), reps: parseInt(e.reps) };
       });
     }
   } catch(err) { console.error('Fetch error:', err); }
