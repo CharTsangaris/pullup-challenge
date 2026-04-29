@@ -212,9 +212,11 @@ function getToday() {
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
 function parseDate(raw) {
-  // Handles both '2026-04-28' and '2026-04-28T21:00:00.000Z'
   if (!raw) return '';
-  return String(raw).substring(0, 10);
+  var s = String(raw);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var d = new Date(s);
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 }
 
 function formatDate(d) {
