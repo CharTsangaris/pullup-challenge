@@ -187,13 +187,10 @@
 
 <script>
 // ============================================================
-// CONFIGURATION — fill in both values from JSONBin
+// CONFIGURATION
 // ============================================================
-var JSONBIN_BIN_ID  = '69f0913f856a682189809ab1';
-var JSONBIN_API_KEY = '$2a$10$IFYVogLE26H1n40/lnrFtu.3sCy0EHBuIrVs3qp7HrpcanRWf74Di';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyRJVSBQ25f085kjc_9l2MPexsMuqLJVUQ3jX-pJ4W5cKT_V-QnbrSw6GgIHIR-vQMF/exec';
 // ============================================================
-
-var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID;
 
 var MEMBERS = [
   { name: 'Marios',      target: 30 },
@@ -243,10 +240,13 @@ var HISTORICAL = [
   { date: '2026-04-27', name: 'Andreas',  reps: 90 },
   { date: '2026-04-27', name: 'Charis',   reps: 4  }, { date: '2026-04-27', name: 'Charis',   reps: 3  }, { date: '2026-04-27', name: 'Charis',   reps: 3  }, { date: '2026-04-27', name: 'Charis',   reps: 3  }, { date: '2026-04-27', name: 'Charis',   reps: 3  }, { date: '2026-04-27', name: 'Charis',   reps: 2  },
   { date: '2026-04-27', name: 'Nicolas',  reps: 5  }, { date: '2026-04-27', name: 'Nicolas',  reps: 5  }, { date: '2026-04-27', name: 'Nicolas',  reps: 5  }, { date: '2026-04-27', name: 'Nicolas',  reps: 5  }, { date: '2026-04-27', name: 'Nicolas',  reps: 5  }, { date: '2026-04-27', name: 'Nicolas',  reps: 5  },
-  { date: '2026-04-28', name: 'Marios',   reps: 5  },
-  { date: '2026-04-28', name: 'Andreas',  reps: 10 },
-  { date: '2026-04-28', name: 'Charis',   reps: 5  }, { date: '2026-04-28', name: 'Charis',   reps: 3  }, { date: '2026-04-28', name: 'Charis',   reps: 2  },
-  { date: '2026-04-28', name: 'Nicolas',  reps: 5  }, { date: '2026-04-28', name: 'Nicolas',  reps: 5  }, { date: '2026-04-28', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-28', name: 'Marios',   reps: 5  }, { date: '2026-04-28', name: 'Marios',   reps: 7  }, { date: '2026-04-28', name: 'Marios',   reps: 5  }, { date: '2026-04-28', name: 'Marios',   reps: 5  }, { date: '2026-04-28', name: 'Marios',   reps: 10 },
+  { date: '2026-04-28', name: 'Andreas',  reps: 40 },
+  { date: '2026-04-28', name: 'Charis',   reps: 5  }, { date: '2026-04-28', name: 'Charis',   reps: 3  }, { date: '2026-04-28', name: 'Charis',   reps: 2  }, { date: '2026-04-28', name: 'Charis',   reps: 2  }, { date: '2026-04-28', name: 'Charis',   reps: 4  },
+  { date: '2026-04-28', name: 'Nicolas',  reps: 5  }, { date: '2026-04-28', name: 'Nicolas',  reps: 5  }, { date: '2026-04-28', name: 'Nicolas',  reps: 5  }, { date: '2026-04-28', name: 'Nicolas',  reps: 5  }, { date: '2026-04-28', name: 'Nicolas',  reps: 5  }, { date: '2026-04-28', name: 'Nicolas',  reps: 5  },
+  { date: '2026-04-28', name: 'Evangelos',reps: 30 },
+  { date: '2026-04-29', name: 'Marios',   reps: 5  },
+  { date: '2026-04-29', name: 'Nicolas',  reps: 5  }, { date: '2026-04-29', name: 'Nicolas',  reps: 5  }, { date: '2026-04-29', name: 'Nicolas',  reps: 5  }, { date: '2026-04-29', name: 'Nicolas',  reps: 5  }, { date: '2026-04-29', name: 'Nicolas',  reps: 5  }, { date: '2026-04-29', name: 'Nicolas',  reps: 5  }, { date: '2026-04-29', name: 'Nicolas',  reps: 5  }, { date: '2026-04-29', name: 'Nicolas',  reps: 5  },
 ];
 
 var selectedMember = null;
@@ -281,29 +281,21 @@ function showError(msg) {
 }
 
 async function fetchLiveEntries() {
-  if (JSONBIN_BIN_ID === 'PASTE_BIN_ID_HERE') return;
   try {
-    var res = await fetch(JSONBIN_URL + '/latest?t=' + Date.now(), {
-      cache: 'no-store',
-      headers: {
-        'X-Master-Key': JSONBIN_API_KEY,
-        'Cache-Control': 'no-cache'
-      }
+    var res = await fetch(SCRIPT_URL + '?t=' + Date.now(), {
+      cache: 'no-store'
     });
     var data = await res.json();
-    if (data.record && Array.isArray(data.record.entries)) {
-      liveEntries = data.record.entries;
+    if (data.success && Array.isArray(data.entries)) {
+      liveEntries = data.entries.map(function(e) {
+        return { name: e.name, date: e.date, reps: parseInt(e.reps) };
+      });
     }
   } catch(err) { console.error('Fetch error:', err); }
 }
 
 async function saveLiveEntries() {
-  if (JSONBIN_BIN_ID === 'PASTE_BIN_ID_HERE') return;
-  await fetch(JSONBIN_URL, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
-    body: JSON.stringify({ entries: liveEntries })
-  });
+  // no-op — Apps Script handles persistence via Sheets
 }
 
 async function submitReps() {
@@ -311,29 +303,31 @@ async function submitReps() {
   var val = parseInt(document.getElementById('rep-val').value);
   if (!val || val < 1) return;
 
-  if (JSONBIN_BIN_ID === 'PASTE_BIN_ID_HERE') {
-    showError('JSONBin not configured yet. See setup instructions.');
-    return;
-  }
-
   isLoading = true;
   var btn = document.getElementById('add-btn');
   btn.disabled = true; btn.textContent = '...';
 
   try {
-    liveEntries.push({ name: selectedMember, date: getToday(), reps: val });
-    await saveLiveEntries();
-    document.getElementById('rep-val').value = '';
-    var total = getTotalForDate(selectedMember, getToday());
-    var m = MEMBERS.find(function(x){ return x.name === selectedMember; });
-    var msg = total >= m.target
-      ? val + ' reps logged. Total: ' + total + ' — target hit!'
-      : val + ' reps logged. Today: ' + total + ' / ' + m.target;
-    showToast(msg);
-    updateTodayInfo();
-    renderLeaderboard();
+    var res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ name: selectedMember, reps: val, date: getToday() })
+    });
+    var data = await res.json();
+    if (data.success) {
+      liveEntries.push({ name: selectedMember, date: getToday(), reps: val });
+      document.getElementById('rep-val').value = '';
+      var total = getTotalForDate(selectedMember, getToday());
+      var m = MEMBERS.find(function(x){ return x.name === selectedMember; });
+      var msg = total >= m.target
+        ? val + ' reps logged. Total: ' + total + ' — target hit!'
+        : val + ' reps logged. Today: ' + total + ' / ' + m.target;
+      showToast(msg);
+      updateTodayInfo();
+      renderLeaderboard();
+    } else {
+      showError('Error: ' + (data.error || 'Unknown error'));
+    }
   } catch(err) {
-    liveEntries.pop();
     showError('Connection error. Try again.');
   }
 
