@@ -433,10 +433,22 @@ function showPage(id, btn) {
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
   document.getElementById('page-'+id).classList.add('active');
   if (btn) btn.classList.add('active');
-  if (id === 'today') renderLeaderboard();
-  if (id === 'history') renderHistory();
-  if (id === 'all') renderAllHistory();
-  if (id === 'overview') renderOverview();
+  if (id === 'today') {
+    renderLeaderboard(); // show immediately with current data
+    fetchLiveEntries().then(function(){ renderLeaderboard(); }); // then refresh silently
+  }
+  if (id === 'history') {
+    renderHistory();
+    fetchLiveEntries().then(function(){ renderHistory(); });
+  }
+  if (id === 'all') {
+    renderAllHistory();
+    fetchLiveEntries().then(function(){ renderAllHistory(); });
+  }
+  if (id === 'overview') {
+    renderOverview();
+    fetchLiveEntries().then(function(){ renderOverview(); });
+  }
 }
 
 async function init() {
@@ -444,7 +456,8 @@ async function init() {
   var sel = document.getElementById('history-select');
   sel.innerHTML = MEMBERS.map(function(m){ return '<option value="'+m.name+'">'+m.name+'</option>'; }).join('');
   renderMemberGrid();
-  await fetchLiveEntries();
+  renderLeaderboard(); // render empty state immediately
+  await fetchLiveEntries(); // then load data
   renderLeaderboard();
   renderHistory();
   renderAllHistory();
