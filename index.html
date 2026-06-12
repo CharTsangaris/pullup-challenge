@@ -199,6 +199,7 @@ var MEMBERS = [
   { name: 'Nicolas',     target: 30 },
   { name: 'Nicholas Z.', target: 10 },
   { name: 'Evangelos',   target: 30 },
+  { name: 'Alexandros',  target: 10 },
 ];
 
 var selectedMember = null;
@@ -412,7 +413,12 @@ function calcStreak(name, target) {
 
 function renderOverview() {
   var tbody = document.getElementById('overview-body');
-  tbody.innerHTML = MEMBERS.map(function(m) {
+  var sorted = MEMBERS.slice().sort(function(a, b) {
+    var totalA = [...new Set(allEntries().filter(function(e){ return e.name === a.name; }).map(function(e){ return e.date; }))].reduce(function(sum, d){ return sum + getTotalForDate(a.name, d); }, 0);
+    var totalB = [...new Set(allEntries().filter(function(e){ return e.name === b.name; }).map(function(e){ return e.date; }))].reduce(function(sum, d){ return sum + getTotalForDate(b.name, d); }, 0);
+    return totalB - totalA;
+  });
+  tbody.innerHTML = sorted.map(function(m) {
     var dates = [...new Set(allEntries().filter(function(e){ return e.name === m.name; }).map(function(e){ return e.date; }))].sort();
     var daysLogged = dates.length;
     var targetsHit = dates.filter(function(d){ return getTotalForDate(m.name, d) >= m.target; }).length;
